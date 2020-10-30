@@ -33,9 +33,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.experimental.results.PrintableResult.testResult;
 import static org.junit.experimental.results.ResultMatchers.hasSingleFailureContaining;
 import static org.junit.experimental.results.ResultMatchers.isSuccessful;
+
 
 import com.pholser.junit.quickcheck.conversion.StringConversion;
 import com.pholser.junit.quickcheck.generator.Only;
@@ -47,6 +50,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -611,16 +615,26 @@ public class ExhaustingAGivenSetTest {
     }
 
     @Test public void manyParameters() {
+        ArrayList<ManyParameters.pair<Integer, Character>> exhaustiveList = new ArrayList<>();
+
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-1, 'r'));
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-2, 'r'));
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-4, 'r'));
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-1, 'y'));
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-2, 'y'));
+        exhaustiveList.add(new ManyParameters.pair<Integer, Character>(-4, 'y'));
+        
         assertThat(testResult(ManyParameters.class), isSuccessful());
         assertEquals(6, ManyParameters.iterations);
-        assertEquals(
+        /*assertEquals(
             asList(-1, -2, -4, -1, -2, -4),
             ManyParameters.firstTestCases
         );
         assertEquals(
             asList('r', 'r', 'r', 'y', 'y', 'y'),
             ManyParameters.secondTestCases
-        );
+        );*/
+        assertTrue(exhaustiveList.size() == ManyParameters.exhaustiveList.size() && exhaustiveList.containsAll(ManyParameters.exhaustiveList) && ManyParameters.exhaustiveList.containsAll(exhaustiveList));
     }
 
     @RunWith(JUnitQuickcheck.class)
@@ -629,6 +643,29 @@ public class ExhaustingAGivenSetTest {
 
         private static final List<Integer> firstTestCases = new LinkedList<>();
         private static final List<Character> secondTestCases = new LinkedList<>();
+        private static final ArrayList<pair<Integer, Character>> exhaustiveList = new ArrayList<>();
+
+        public static class pair<first,second>{
+            public first First;
+            public second Second;
+            private pair(first First,second Second){
+                this.First = First;
+                this.Second = Second;
+            }
+            @Override
+            public boolean equals(Object o) { 
+ 
+                if (o == this) { 
+                    return true; 
+                } 
+
+                if (!(o instanceof pair)) { 
+                    return false; 
+                } 
+                pair c = (pair) o; 
+                return First == c.First && Second == c.Second; 
+            } 
+        }
 
         @Property(mode = EXHAUSTIVE) public void shouldHold(
             @Only({"-1", "-2", "-4"}) int i,
@@ -636,6 +673,7 @@ public class ExhaustingAGivenSetTest {
 
             firstTestCases.add(i);
             secondTestCases.add(ch);
+            exhaustiveList.add(new ManyParameters.pair<Integer, Character>(i, ch));
             ++iterations;
         }
     }
